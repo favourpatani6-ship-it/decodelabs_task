@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Analysis Overview Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+  :root{
+    --bg:#EEF1FB; --card:#FFFFFF; --ink:#16224F; --muted:#7D879D;
+    --blue:#1652A4; --blue2:#2B72C9; --blue3:#6FA6E8;
+    --red:#A91F25; --green:#7D7B28; --line:#E1E6F2;
+    --shadow:0 10px 28px rgba(38,50,120,.10); --radius:18px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);font-family:'Plus Jakarta Sans',Arial,sans-serif;color:var(--ink)}
+  .wrap{max-width:1450px;margin:auto;padding:28px 30px 45px}
+  .top{display:flex;justify-content:flex-end;align-items:center;margin-bottom:10px}
+  .year-box{background:#fff;border:1px solid #D7DDEA;border-radius:8px;padding:9px 13px;box-shadow:var(--shadow)}
+  .year-box label{font-size:11px;font-weight:700;color:var(--muted);margin-right:8px}
+  select{font:600 12px inherit;border:0;background:#fff;color:var(--ink);outline:none;cursor:pointer}
+
+  .title{background:#E1EBF8;border-radius:10px;padding:18px;text-align:center;margin-bottom:16px}
+  .title h1{margin:0;color:#3974B8;font-size:29px;letter-spacing:.01em}
+
+  .main-grid{display:grid;grid-template-columns:1.15fr .72fr .72fr;gap:14px}
+  .left{grid-column:1/3}
+  .kpis{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .kpi{background:#fff;border-radius:12px;padding:16px 18px;box-shadow:var(--shadow);min-height:92px}
+  .kpi .label{font-size:12px;font-weight:800;color:#3974B8;text-transform:uppercase}
+  .kpi .value{font-size:27px;font-weight:800;margin-top:7px}
+  .kpi.lost .label,.kpi.lost .value{color:var(--red)}
+  .kpi.net .value{color:#77752A}
+  .kpi.pending .value{color:#222}
+
+  .card{background:#fff;border:1px solid #DCE2EF;border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow)}
+  .card h3{margin:0 0 10px;color:#285C96;font-size:14px;font-weight:800}
+  .chart{height:255px;position:relative}
+  .trend{height:290px}
+  .status{height:290px}
+  .loss{height:255px}
+  .product{height:270px}
+  .payment{height:270px}
+
+  .grid-main{display:grid;grid-template-columns:1.75fr 1fr;gap:14px;margin-top:14px}
+  .grid-right{display:grid;grid-template-columns:1fr;gap:14px}
+  .bottom{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-top:14px}
+  .insights{min-height:270px}
+  .insights h3{display:flex;justify-content:flex-end;font-size:12px;color:#777;margin-bottom:0}
+
+  .year-info{font-size:11px;color:var(--muted);margin-top:8px;text-align:right}
+  .note{margin-top:18px;text-align:center;color:var(--muted);font-size:11px}
+
+  @media(max-width:1000px){
+    .main-grid,.grid-main,.bottom{grid-template-columns:1fr}
+    .left{grid-column:auto}
+  }
+  @media(max-width:650px){
+    .wrap{padding:16px}
+    .title h1{font-size:22px}
+    .kpis{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="top">
+    <div class="year-box">
+      <label>YEAR</label>
+      <select id="yearFilter">
+        <option value="2023">2023</option>
+        <option value="2024">2024</option>
+        <option value="2025">2025</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="title"><h1>ANALYSIS OVERVIEW</h1></div>
+
+  <div class="main-grid">
+    <div class="left">
+      <div class="grid-main">
+        <div class="card">
+          <h3>MONTHLY REVENUE TREND</h3>
+          <div class="chart trend"><canvas id="trendChart"></canvas></div>
+        </div>
+
+        <div class="card">
+          <h3>ORDERS BY STATUS</h3>
+          <div class="chart status"><canvas id="statusChart"></canvas></div>
+        </div>
+      </div>
+
+      <div class="bottom">
+        <div class="card">
+          <h3>TOP PRODUCT</h3>
+          <div class="chart product"><canvas id="productChart"></canvas></div>
+        </div>
+
+        <div class="card">
+          <h3>REVENUE BY PAYMENT METHOD</h3>
+          <div class="chart payment"><canvas id="paymentChart"></canvas></div>
+        </div>
+
+        <div class="card insights">
+          <h3>INSIGHTS</h3>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-right">
+      <div class="kpis">
+        <div class="kpi"><div class="label">Gross Revenue</div><div class="value" id="gross"></div></div>
+        <div class="kpi net"><div class="label">Net Revenue</div><div class="value" id="net"></div></div>
+        <div class="kpi lost"><div class="label">Revenue Lost</div><div class="value" id="lost"></div></div>
+        <div class="kpi pending"><div class="label">Revenue Pending</div><div class="value" id="pending"></div></div>
+      </div>
+
+      <div class="card">
+        <h3>LOSS RATE BY PAYMENT METHOD</h3>
+        <div class="chart loss"><canvas id="lossChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="year-info">Dashboard values reconstructed from the supplied video for 2023–2025.</div>
+  <div class="note">Use the year selector to reproduce the three dashboard states shown in the video.</div>
+</div>
+
+<script>
+/*
+  Values below are transcribed/reconstructed from the supplied dashboard video.
+  KPI values are taken directly from the visible dashboard.
+  Chart values are represented from the visible chart scales/shapes where the
+  source video did not display exact data labels.
+*/
+const DASHBOARD = {
+  "2023": {
+    gross: 552643, net: 330548, lost: 222096, pending: 114869,
+    months: ["1","2","3","4","5","6","7","8","9","10","11","12"],
+    revenue: [55000,40000,48000,28000,67000,51000,43000,56000,30000,54000,45000,45643],
+    statuses: ["Cancelled","Delivered","Pending","Returned","Shipped"],
+    orders: [106,88,118,103,97],
+    lossLabels: ["Online","Gift Card","Debit Card","Credit Card","Cash"],
+    loss: [.34,.45,.41,.44,.43],
+    products: ["Tablet","Printer","Phone","Monitor","Laptop","Desk","Chair"],
+    productRevenue: [8600,9400,6100,7600,8100,5900,8700],
+    paymentRevenue: [0.24,0.16,0.20,0.18,0.22]
+  },
+  "2024": {
+    gross: 480236, net: 300340, lost: 179896, pending: 100961,
+    months: ["1","2","3","4","5","6","7","8","9","10","11","12"],
+    revenue: [38000,36000,35000,49000,26000,67000,41000,30000,38000,35000,30000,37236],
+    statuses: ["Cancelled","Delivered","Pending","Returned","Shipped"],
+    orders: [82,96,81,97,100],
+    lossLabels: ["Online","Gift Card","Debit Card","Credit Card","Cash"],
+    loss: [.32,.45,.40,.44,.43],
+    products: ["Tablet","Printer","Phone","Monitor","Laptop","Desk","Chair"],
+    productRevenue: [6300,6400,6200,6500,7300,6000,8600],
+    paymentRevenue: [0.19,0.23,0.21,0.18,0.19]
+  },
+  "2025": {
+    gross: 231883, net: 114200, lost: 117682, pending: 40497,
+    months: ["1","2","3","4","5","6"],
+    revenue: [29000,35000,38000,30000,42000,57883],
+    statuses: ["Cancelled","Delivered","Pending","Returned","Shipped"],
+    orders: [60,44,37,47,38],
+    lossLabels: ["Online","Gift Card","Debit Card","Credit Card","Cash"],
+    loss: [.33,.45,.41,.44,.43],
+    products: ["Tablet","Printer","Phone","Monitor","Laptop","Desk","Chair"],
+    productRevenue: [38000,36000,25000,32000,34000,48000,23000],
+    paymentRevenue: [0.20,0.31,0.19,0.12,0.18]
+  }
+};
+
+const blue="#174D96", blue2="#2E79C8", teal="#2C8E95", gray="#71819A", grid="#E9EDF5";
+
+let trendChart,statusChart,lossChart,productChart,paymentChart;
+
+function money(n){return n.toLocaleString("en-US");}
+
+function commonOptions(){
+  return {
+    responsive:true, maintainAspectRatio:false,
+    plugins:{legend:{display:false}},
+    animation:{duration:350}
+  };
+}
+
+function render(){
+  const y=document.getElementById("yearFilter").value;
+  const d=DASHBOARD[y];
+
+  document.getElementById("gross").textContent=money(d.gross);
+  document.getElementById("net").textContent=money(d.net);
+  document.getElementById("lost").textContent=money(d.lost);
+  document.getElementById("pending").textContent=money(d.pending);
+
+  if(trendChart) trendChart.destroy();
+  trendChart=new Chart(document.getElementById("trendChart"),{
+    type:"line",
+    data:{labels:d.months,datasets:[{
+      data:d.revenue,borderColor:"#111827",borderWidth:2,
+      pointRadius:0,tension:.12,fill:false
+    }]},
+    options:{
+      ...commonOptions(),
+      scales:{
+        y:{beginAtZero:true,ticks:{callback:v=>v.toLocaleString()},grid:{color:grid}},
+        x:{grid:{display:false}}
+      }
+    }
+  });
+
+  if(statusChart) statusChart.destroy();
+  statusChart=new Chart(document.getElementById("statusChart"),{
+    type:"bar",
+    data:{labels:d.statuses,datasets:[{
+      data:d.orders,backgroundColor:blue,borderColor:"#0F3C76",borderWidth:1
+    }]},
+    options:{
+      ...commonOptions(),
+      scales:{
+        y:{beginAtZero:true,grid:{color:grid}},
+        x:{grid:{display:false}}
+      }
+    }
+  });
+
+  if(lossChart) lossChart.destroy();
+  lossChart=new Chart(document.getElementById("lossChart"),{
+    type:"bar",
+    data:{labels:d.lossLabels,datasets:[{
+      data:d.loss,backgroundColor:blue,borderRadius:0
+    }]},
+    options:{
+      ...commonOptions(),
+      indexAxis:"y",
+      scales:{
+        x:{beginAtZero:true,max:.5,ticks:{callback:v=>v.toFixed(1)},grid:{color:grid}},
+        y:{grid:{display:false}}
+      }
+    }
+  });
+
+  if(productChart) productChart.destroy();
+  productChart=new Chart(document.getElementById("productChart"),{
+    type:"bar",
+    data:{labels:d.products,datasets:[{
+      data:d.productRevenue,backgroundColor:blue,borderRadius:0
+    }]},
+    options:{
+      ...commonOptions(),
+      indexAxis:"y",
+      scales:{
+        x:{beginAtZero:true,ticks:{callback:v=>v.toLocaleString()},grid:{color:grid}},
+        y:{grid:{display:false}}
+      }
+    }
+  });
+
+  if(paymentChart) paymentChart.destroy();
+  paymentChart=new Chart(document.getElementById("paymentChart"),{
+    type:"doughnut",
+    data:{
+      labels:["Cash","Credit Card","Debit Card","Gift Card","Online"],
+      datasets:[{
+        data:d.paymentRevenue,
+        backgroundColor:[blue,blue2,"#67A6D9",gray,teal],
+        borderColor:"#fff",borderWidth:2
+      }]
+    },
+    options:{
+      ...commonOptions(),
+      cutout:"62%",
+      plugins:{
+        legend:{
+          display:true,position:"right",
+          labels:{boxWidth:8,font:{size:10},padding:7}
+        }
+      }
+    }
+  });
+}
+
+document.getElementById("yearFilter").addEventListener("change",render);
+render();
+</script>
+</body>
+</html>

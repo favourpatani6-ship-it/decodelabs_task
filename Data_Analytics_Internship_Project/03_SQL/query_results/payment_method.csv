@@ -1,0 +1,6 @@
+PaymentMethod,OrderCount,%OfOrder,TotalRevenue
+Online,258,0.215,262442.9406
+Cash,246,0.205,259786.2894
+Credit Card,234,0.195,263847.6308
+Debit Card,232,0.1933,232361.1807
+Gift Card,230,0.1917,246323.9202

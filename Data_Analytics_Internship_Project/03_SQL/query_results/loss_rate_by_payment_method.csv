@@ -1,0 +1,6 @@
+PaymentMethod,TotalOrders,LostOrders,LostRate
+Gift Card,230,102,0.4435
+Credit Card,234,103,0.4402
+Cash,246,106,0.4309
+Debit Card,232,95,0.4095
+Online,258,91,0.3527
